@@ -1,0 +1,15 @@
+{
+    "name":"Level Name",
+    "rows": 0,
+    "cols": 0,
+    "mainHexQR": [0,0],
+    "mapFeatures": {
+        "New Plant": [
+            [1,1],[2,2],[3,3]
+        ],
+        "Old Plant": [],
+        "Stone": [
+            [4,4],[5,5]
+        ]
+    }
+}

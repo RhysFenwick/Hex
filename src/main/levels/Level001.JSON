@@ -1,0 +1,13 @@
+{
+    "name":"Tutorial",
+    "rows": 75,
+    "cols": 104,
+    "mainHexQR": [8,2],
+    "mapFeatures": {
+        "New Plant": [
+            [30,3]
+        ],
+        "Old Plant": [],
+        "Stone": []
+    }
+}

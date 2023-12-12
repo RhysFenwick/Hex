@@ -1,0 +1,26 @@
+{
+    "Default":{
+        "typeNum":0,
+        "growAbility":1
+    },
+    "Main":{
+        "typeNum":1,
+        "growAbility":1
+    },
+    "New Plant":{
+        "typeNum":2,
+        "growAbility":0
+    },
+    "Old Plant":{
+        "typeNum":3,
+        "growAbility":0
+    },
+    "Stone":{
+        "typeNum":4,
+        "growAbility":0
+    },
+    "Bomb":{
+        "typeNum":5,
+        "growAbility":0
+    }
+}
