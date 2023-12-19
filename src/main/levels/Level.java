@@ -4,8 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import pieces.hexes.FocusHex;
 import pieces.hexes.Hex;
+import pieces.hexes.Placeable;
+import pieces.hexes.BoardHex;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -19,9 +20,9 @@ import java.util.Map;
 public class Level {
     
     // Grid values
-    public List<Hex> hexGrid = new ArrayList<>(); // Should be the list of all hexes!
+    public List<BoardHex> hexGrid = new ArrayList<>(); // Should be the list of all hexes!
     public int cols, rows;
-    public FocusHex mainHex;
+    public Placeable mainHex;
     public Hex targetHex;
     public Map<String,Integer> tileCounters = new HashMap<>();
     public int plantCount;
@@ -40,16 +41,25 @@ public class Level {
         rows = lvl.getInt("rows");
         int[] mainHexQR = convertArray(lvl.getJSONArray("mainHexQR"));
 
-        JSONObject tilesJSON = lvl.getJSONObject("mapFeatures");
-        Map<String, int[][]>  mapTiles = extractTiles(tilesJSON);
+        // OLD: Get "terrain"
+        JSONObject terrainJSON = lvl.getJSONObject("mapFeatures");
+        Map<String, int[][]>  terrainTiles = extractTiles(terrainJSON);
+
+        // NEW: Get terrain
+        JSONObject newTerrainJSON = lvl.getJSONObject("mapTerrain");
+        Map<String, int[][]>  terrainMap = extractTiles(newTerrainJSON);
+
+        // NEW: Get placeables
+        JSONObject placeableJSON = lvl.getJSONObject("mapTerrain");
+        Map<String, int[][]>  placeableMap = extractTiles(placeableJSON);
 
         // Set up the map
         initialiseGrid(cols,rows);
-        fillMap(mapTiles); // This one will also fill tileCounters
+        fillhexGrid(terrainTiles, "Terrain"); // This line will also fill tileCounters
         plantCount = sumValues(tileCounters, plantNames);
-        mainHex = new FocusHex(mainHexQR[0], mainHexQR[1],-mainHexQR[0]-mainHexQR[1]); 
+        mainHex = new Placeable(mainHexQR[0], mainHexQR[1],-mainHexQR[0]-mainHexQR[1]); 
         targetHex = new Hex(mainHexQR[0], mainHexQR[1],-mainHexQR[0]-mainHexQR[1]); // Initialise as on target
-        hexFromQR(mainHex.q, mainHex.r).toType("Stone"); // Only for stone trail!        
+        hexFromQR(mainHex.q, mainHex.r).toTerrain("Stone"); // Only for stone trail!        
 
     }
 
@@ -58,7 +68,7 @@ public class Level {
         for (int col=0;col<cols;col++) {   // Fill hexGridQR with QR coords - might not render all of them!
             for (int row=0;row<rows;row++) {
                 // hexGridQR[col*rows + row] = new int[] {col,row-col/2};
-                hexGrid.add(new Hex(col,row - col/2,-col-(row-col/2)));
+                hexGrid.add(new BoardHex(col,row - col/2,-col-(row-col/2)));
             }
         }
     }
@@ -75,6 +85,10 @@ public class Level {
 
 
     private Map<String,int[][]> extractTiles(JSONObject tiles) { // Takes the object with a list of tileType:[[q,r],[q,r]] arrays
+        /*
+         * Takes the object with a list of tileType:[[q,r],[q,r]] arrays
+         * Returns a map of type "TypeName":[[q,r],[q,r]]
+         */
         Map<String,int[][]> tilesMap = new HashMap<>();
         Iterator<String> keys = tiles.keys();
 
@@ -93,19 +107,27 @@ public class Level {
     }
 
 
-    private void fillMap(Map<String,int[][]> tileMap) { // Takes Map of <"Type":[[q,r],[q,r]] and updates hexGrid with these
+    private void fillhexGrid(Map<String,int[][]> tileMap, String field) { 
+        /*
+         * Takes Map of <"Type":[[q,r],[q,r]]> and updates hexGrid with these
+         * Whether it's updating terrain or placeable depends on the field string ("Terrain","Placeable")
+         * TODO: Change this! Need to fill two grids, rather than one grid with two bits of info
+         */
         for (Map.Entry<String,int[][]> tileType : tileMap.entrySet()) {
             String typeName =  tileType.getKey();
             int[][] tileList = tileType.getValue();
             for (int[] qr : tileList) {
-                Hex hex = hexFromQR(qr[0], qr[1]);
-                hex.toType(typeName);
-                if (tileCounters.containsKey(typeName)) {
-                    int c = tileCounters.get(typeName);
-                    tileCounters.put(typeName, c+1);
-                }
-                else {
-                    tileCounters.put(typeName,1);
+                BoardHex hex = hexFromQR(qr[0], qr[1]);
+
+                if (field == "Terrain"){
+                    hex.toTerrain(typeName);
+                    if (tileCounters.containsKey(typeName)) {
+                        int c = tileCounters.get(typeName);
+                        tileCounters.put(typeName, c+1);
+                    }
+                    else {
+                        tileCounters.put(typeName,1);
+                    }
                 }
             }
         }   
@@ -133,11 +155,11 @@ public class Level {
         return cols;
     }
 
-    public List<Hex> getHexGrid() {
+    public List<BoardHex> getHexGrid() {
         return hexGrid;
     }
 
-    public FocusHex getMainHex() {
+    public Placeable getMainHex() {
         return mainHex;
     }
 
@@ -146,7 +168,7 @@ public class Level {
     }
 
     // Other methods (misc)
-    private Hex hexFromQR(int q, int r) {
+    private BoardHex hexFromQR(int q, int r) {
         int i = q * rows + r + q/2;
         return hexGrid.get(i);
     }

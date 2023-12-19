@@ -57,10 +57,16 @@ public class Funcs { // All the maths that I don't want clogging up the other fi
     }
 
 
-    public static JSONObject readJSON(String fileName) throws FileNotFoundException {
-        FileReader file = new FileReader(fileName);
-        JSONTokener token = new JSONTokener(file);
-        JSONObject json = new JSONObject(token);
+    public static JSONObject readJSON(String fileName){
+        JSONObject json = null;
+        try {
+            FileReader file = new FileReader(fileName);
+            JSONTokener token = new JSONTokener(file);
+            json = new JSONObject(token);
+        }
+        catch (FileNotFoundException e) {
+            System.out.println(fileName + " not found");
+        }
         return json;
     }
 }

@@ -90,22 +90,4 @@ public class Menu extends JPanel {
 
         return mainMenu;
     }
-
-    // HUD (lower) - shown all the time
-    public static Menu lowerHUD(GamePanel gamePanel) {
-        Menu lowerHUD = new Menu(0,0,0,0); // Does this matter?
-
-        lowerHUD.setLayout(null);
-
-        GButton editButton = new GButton("God Mode", "Edit",Color.BLUE, 2, gamePanel);
-        lowerHUD.buttonList.add(editButton);
-        lowerHUD.add(editButton);
-
-
-        GButton terrainPicker = new GButton("Terrain Picker", "Pick", Color.GREEN, 2, gamePanel);
-        lowerHUD.buttonList.add(terrainPicker);
-        lowerHUD.add(terrainPicker);
-
-        return lowerHUD;
-    }
 }

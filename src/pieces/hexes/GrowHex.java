@@ -1,12 +1,13 @@
-// Not sure I need this! Currently just a container for the grow method. Maybe just put relevant code in main rather than a constructor?
-
 package pieces.hexes;
 
 import java.awt.Color;
 import java.util.Random;
 
+/*
+ * TODO: Rename this "New Plant", extends Placeable
+ */
 
-public class GrowHex extends Hex{
+public class GrowHex extends Placeable{
 
     private static int growChance = 100_000; // Chance out of a million that a tile will grow this tick
 

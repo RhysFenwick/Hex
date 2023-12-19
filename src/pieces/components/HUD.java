@@ -21,9 +21,9 @@ public class HUD extends Menu{
         buttonList.add(editButton);
         add(editButton);
 
-        GButton tilePicker = new GButton("Tile Picker", "Pick", Color.GREEN, 2, gp);
-        buttonList.add(tilePicker);
-        add(tilePicker);
+        GButton terrainPicker = new GButton("Terrain Picker", "Pick", Color.GREEN, 2, gp);
+        buttonList.add(terrainPicker);
+        add(terrainPicker);
         
     }
 

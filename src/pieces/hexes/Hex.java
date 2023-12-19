@@ -1,11 +1,16 @@
 package pieces.hexes;
 
-import java.awt.Color;
 import java.lang.Math;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+
+
+/* 
+ * The basic hex structure.
+ * End goal: For this to hold the basic shape/dimension properties common to both terrain and placeables, but nothing else
+*/
 
 public class Hex {
     // The dimensions of a hex - everything else flows from these two
@@ -22,9 +27,6 @@ public class Hex {
     
     
     // Default tile properties
-    public Color color = Color.WHITE;
-    public String terrain = "Default";
-    public String placeable = "Null";
     public boolean beenUpdated = false;
 
 
@@ -39,6 +41,9 @@ public class Hex {
     }
 
     // Movement
+    /*
+     * TODO: Move these to Placeable. The hex stack as a whole won't move - unless Placeable extends Hex (or both co-extend background?)
+     */
 
     public void shiftQR(int qDelt, int rDelt) {
         int newQ = q + qDelt, newR = r + rDelt;
@@ -99,10 +104,6 @@ public class Hex {
 
     public int[] getY() {
         return yCoords;
-    }
-
-    public void toType(String hType) {
-        terrain = hType;
     }
 
     // Get QR of fractional hex (for Pix2Hex)
