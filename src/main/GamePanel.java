@@ -30,6 +30,7 @@ import org.json.JSONObject;
 import inputs.KeyboardInputs;
 import inputs.MouseInputs;
 import main.levels.Level;
+import pieces.components.HUD;
 import pieces.components.Menu;
 import pieces.hexes.FocusHex;
 import pieces.hexes.GrowHex;
@@ -51,7 +52,7 @@ public class GamePanel extends JPanel implements ActionListener{
     private List<Hex> hexGrid = new ArrayList<>(); // Should be the list of all hexes!
     private int hexHeight = Hex.height, hexWidth = Hex.width; // To avoid calling them from across the class every time
 
-    private int hudHeight = 30;
+    public int hudHeight = 30;
     private int offsetX = 20, offsetY = hudHeight + 20;
     public boolean targetSet = false;
     public int menuMargin = 50; 
@@ -75,21 +76,26 @@ public class GamePanel extends JPanel implements ActionListener{
     private boolean paused = false;
     private int plantCount; // # of tiles that are old/new plant
 
-    // Map of Images for the tile types
-    private Map<String, Image> hexImg = new HashMap<String,Image>();
+    // Map of Images for the terrain types
+    public Map<String, Image> terrainImg = new HashMap<String,Image>();
 
-    // Initialise JSON Object for tiles
-    private JSONObject tileJSON;
+    // ArrayList for ordered list of terrain types
+    public ArrayList<String> tileList = new ArrayList<>();
+
+    // Initialise JSON Object for terrain
+    private JSONObject terrainJSON;
 
     // Initialise random generator
     Random rand = new Random();
 
     // Godmode
     private boolean godMode = false;
+    public int editTerrain = 0;
 
     // Menus
     private int menuType = 0; // 0 = "No menu"
     Menu mainMenu = Menu.mainMenu(this); // Can probably have a function in Menu.java that initialises all menus as Map<String,Menu>
+    HUD lowerHUD = new HUD(0,0,0,0,this); // TODO - If all initialised at 0, can remove those parameters
 
     public GamePanel() {
 
@@ -104,9 +110,9 @@ public class GamePanel extends JPanel implements ActionListener{
 
         // Load in tile properties and fill hexTiles with images
 
-        tileJSON = null;
+        terrainJSON = null;
         try {
-            tileJSON = Funcs.readJSON("src/main/resources/TileTypes.JSON");
+            terrainJSON = Funcs.readJSON("src/main/resources/TerrainTypes.JSON");
         } catch (FileNotFoundException e) {
             System.out.println("Tile types file not found");
             e.printStackTrace();
@@ -114,11 +120,12 @@ public class GamePanel extends JPanel implements ActionListener{
 
         // Cycle through the JSONObject and read each entry 
 
-        Iterator<String> tileKeys = tileJSON.keys();
+        Iterator<String> tileKeys = terrainJSON.keys();
         while (tileKeys.hasNext()) {
             String tString = tileKeys.next();
+            tileList.add(tString); // Filling the ArrayList
             try {
-                hexImg.put(tString,getImage(tString+".png").getScaledInstance(hexWidth, hexHeight, Image.SCALE_DEFAULT));
+                terrainImg.put(tString,getImage(tString+".png").getScaledInstance(hexWidth, hexHeight, Image.SCALE_DEFAULT));
             }
             catch(IOException e){
                 System.out.println(e);
@@ -229,15 +236,14 @@ public class GamePanel extends JPanel implements ActionListener{
         }
     }
 
-    // GodMode function
+    // Target setting function
     public void mouseClicked(int x, int y) {
         if (!godMode) {
             targetSet = true;
             moveTargetXY(x, y);
         }
         else {
-            int[] hexQR = Hex.pix2Hex(x-offsetX, y-offsetY);
-            updateHex(hexQR, "Stone");
+            dragOver(x, y);
         }
     }
 
@@ -251,7 +257,7 @@ public class GamePanel extends JPanel implements ActionListener{
         
         // Make a stone trail
         Hex toStone = hexFromQR(mainHex.q, mainHex.r);
-        if (toStone.hexType != "Bomb") {
+        if (toStone.terrain != "Bomb") {
             updateHex(toStone.getQR(),"Stone");
         }
 
@@ -261,13 +267,13 @@ public class GamePanel extends JPanel implements ActionListener{
             Hex h = hexGrid.get(i);
             
             // The main "If X do Y bit"
-            switch (h.hexType) { 
+            switch (h.terrain) { 
                 case "New Plant":
                     int hq = h.q, hr = h.r;
                     int [] newPlantQR = GrowHex.grow(hq, hr);
                     if (Funcs.isHexInGrid(newPlantQR[0],newPlantQR[1], hexRows, hexCols)) { // Make sure it's not accessing a QR not in hexGrid!
-                        String hs = hexFromQR(newPlantQR[0],newPlantQR[1]).hexType;
-                        long hGrow = tileJSON.getJSONObject(hs).getLong("growAbility");
+                        String hs = hexFromQR(newPlantQR[0],newPlantQR[1]).terrain;
+                        long hGrow = terrainJSON.getJSONObject(hs).getLong("growAbility");
                         if (hGrow*10 >= 1 + rand.nextInt(10) ) {
                             newGrowth.add(newPlantQR);
                         }
@@ -278,8 +284,8 @@ public class GamePanel extends JPanel implements ActionListener{
                     int[][] allValidNeighbours = Funcs.neighbourRing(hq,hr,1, hexRows, hexCols); // Returns array of all in-bounds neighbours
                     boolean isSurrounded = true; // Until proven otherwise
                     for (int n=0;n<allValidNeighbours.length;n++) {
-                        String ht = hexFromQR(allValidNeighbours[n][0], allValidNeighbours[n][1]).hexType;
-                        if (tileJSON.getJSONObject(ht).getLong("growAbility") != 0) { // If there are tiles around it it can grow into
+                        String ht = hexFromQR(allValidNeighbours[n][0], allValidNeighbours[n][1]).terrain;
+                        if (terrainJSON.getJSONObject(ht).getLong("growAbility") != 0) { // If there are tiles around it it can grow into
                             isSurrounded = false;
                         }
                     }
@@ -312,7 +318,7 @@ public class GamePanel extends JPanel implements ActionListener{
         for (int i=0;i<hexGridSize;i++) { // Second pass - overlaid on top of tile growth. Too slow?
             Hex h = hexGrid.get(i); 
 
-            switch(h.hexType) { 
+            switch(h.terrain) { 
                 case "Bomb":
                     int bq = h.q, br = h.r;
                     int[][] innerRing = Funcs.neighbourRing(bq, br, 1, hexRows, hexCols);
@@ -327,7 +333,7 @@ public class GamePanel extends JPanel implements ActionListener{
 
                     for (int outer=0;outer<outerRing.length;outer++) {
                         int nq = outerRing[outer][0], nr = outerRing[outer][1];
-                        if (hexFromQR(nq, nr).hexType == "Old Plant") {
+                        if (hexFromQR(nq, nr).terrain == "Old Plant") {
                             updateHex(new int[]{nq,nr},"New Plant");
                         }
                         else {
@@ -345,7 +351,7 @@ public class GamePanel extends JPanel implements ActionListener{
         // Count totals
         plantCount = 0;
         for (int i=0;i<hexGridSize;i++) {
-            if (hexGrid.get(i).hexType == "New Plant" || hexGrid.get(i).hexType == "Old Plant") {
+            if (hexGrid.get(i).terrain == "New Plant" || hexGrid.get(i).terrain == "Old Plant") {
                 plantCount += 1;
             }
         }
@@ -398,7 +404,7 @@ public class GamePanel extends JPanel implements ActionListener{
             
             // Draw hexes
             bg.setStroke(new BasicStroke(2, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER));
-            bg.setColor(Color.BLACK);
+            bg.setColor(Color.DARK_GRAY);
             for (int i=0;i<hexGridSize;i++) {
                 Hex hex = hexGrid.get(i);
                 int[][] coords = Hex.hex2Pix(hex.q,hex.r);
@@ -413,7 +419,7 @@ public class GamePanel extends JPanel implements ActionListener{
             }
         }
 
-        // Create mid grid as BI - runs every 2 seconds, with intra-run changes being rendered on hex level
+        // Create mid grid as BI -  runs when a threshold of changes is reached, with intra-run changes being rendered on hex level
 
         if (updateMidGrid) { // Can this be a  multithread situation? Drops ~2 frames every time and is low-priority
             updateMidGrid = false;
@@ -427,7 +433,7 @@ public class GamePanel extends JPanel implements ActionListener{
             // Draw hexes
             for (Hex hex : hexGrid) {
                 int[] topLeft = hex.topLeft;
-                mg.drawImage(hexImg.get(hex.hexType), topLeft[0] + hexWidth, topLeft[1] + hexHeight,null);
+                mg.drawImage(terrainImg.get(hex.terrain), topLeft[0] + hexWidth, topLeft[1] + hexHeight,null);
                 hex.beenUpdated = false;
             }
         }
@@ -450,7 +456,7 @@ public class GamePanel extends JPanel implements ActionListener{
         for (Hex hex : hexGrid) { 
             if (hex.beenUpdated) {
                 int[] topLeft = hex.topLeft;
-                g.drawImage(hexImg.get(hex.hexType), topLeft[0] + offsetX, topLeft[1] + offsetY,null);
+                g.drawImage(terrainImg.get(hex.terrain), topLeft[0] + offsetX, topLeft[1] + offsetY,null);
                 midCounter++;
             }
         }
@@ -459,15 +465,14 @@ public class GamePanel extends JPanel implements ActionListener{
         if (midCounter > updateMGthreshold) {
             updateMidGrid = true;
             updateList.clear();
-            System.out.println("Cleared!");
             midCounter = 0;
         }
 
         // Render main hex
-        g.drawImage(hexImg.get("Main"), mainHex.topLeft[0] + offsetX, mainHex.topLeft[1] + offsetY, null);
+        g.drawImage(terrainImg.get("Main"), mainHex.topLeft[0] + offsetX, mainHex.topLeft[1] + offsetY, null);
 
         // Draw overlay grid
-        g2.drawImage(overlayHexGrid, null, offsetX - hexWidth/2 ,offsetY - hexHeight/2 -1);
+        //g2.drawImage(overlayHexGrid, null, offsetX - hexWidth/2 ,offsetY - hexHeight/2 -1);
 
         
 
@@ -484,7 +489,14 @@ public class GamePanel extends JPanel implements ActionListener{
             targetSet = false;
         }
 
-        // HUD
+        /*
+         * HUDs
+         * Lower HUD separate component
+         * TODO: Make the upper HUD the same
+         * TODO: Scrolling should stop if hovering over HUD
+         */
+
+        // Upper HUD
         g.setColor(Color.BLACK);
         g.drawRect(0, 0, getWidth(), hudHeight);
         g.setColor(Color.WHITE);
@@ -512,9 +524,16 @@ public class GamePanel extends JPanel implements ActionListener{
             g.setColor(Color.RED);
             g.drawString("Paused", getWidth()/2 - fontSize*2, 20);
         }
+
+        // Lower HUD - goes over the edges by 10px
+        lowerHUD.setLocation(-10, getHeight() - hudHeight); // Same height as top HUD (Not necessarily the same as the menuMargin)
+        lowerHUD.setSize(getWidth()+20,hudHeight+10);
+        add(lowerHUD);
+
+
         
 
-        // Show menu
+        // Show main menu
         if (menuType != 0) {
             mainMenu.setLocation(menuMargin, menuMargin);
             int menuWidth = getWidth() - menuMargin*2, menuHeight = getHeight() - menuMargin*2;
@@ -612,21 +631,28 @@ public class GamePanel extends JPanel implements ActionListener{
         }
     }
 
-    // Dragging functions - not currently used
-    /* 
-    public void dragOver(int x, int y) {
-        int[] qr = Hex.pix2Hex(x, y);
-        Hex h = hexFromQR(qr[0], qr[1]);
-        if (h.hexType != "Stone") { // Only need to change/repaint if it's a new hex!
-            h.hexType = "Stone";
-            h.color = Color.DARK_GRAY;
-        }
+    // Editing functions
+
+    // Dragging
+    
+    public void dragOver(int x, int y) { // TODO - Any hex!
+        if (godMode) {
+            String hexTerrain = tileList.get(editTerrain);
+            int[] qr = Hex.pix2Hex(x - offsetX, y - offsetY);
+            Hex h = hexFromQR(qr[0], qr[1]);
+            if (h.terrain != hexTerrain) { // Only need to change/repaint if it's a new hex!
+                updateHex(qr, hexTerrain);
+            }
+        }    
     }
 
-    public void clearDrag() { // This function no longer works.
-        dragHex.clear();
+    // Choosing tile
+
+    public void cycleTerrain() {
+        editTerrain += 1;
+        editTerrain = editTerrain%tileList.size(); // Should cycle through all the different tile types!
     }
-    */
+    
 
 
     // Offset functions
@@ -655,10 +681,10 @@ public class GamePanel extends JPanel implements ActionListener{
     }
 
     public void incOY(int y) {
-        if (y + offsetY < 30 + hudHeight && y + offsetY - getHeight() + 20 > - (hexRows*hexHeight) ) {
+        if (y + offsetY < 30 + hudHeight && y + offsetY - getHeight() + hudHeight + 20 > - (hexRows*hexHeight) ) { // If it's in bounds
             offsetY += y;
         }
-        else if (y + offsetY - getHeight() + 20 < - (hexRows*hexHeight) && y > 0) { // If it's out of bounds and scrolling upwards
+        else if (y + offsetY - getHeight() + 20 < - (hexRows*hexHeight) && y > 0) { // If it's out of bounds and scrolling up
             offsetY += y;
         }
     }
@@ -669,7 +695,7 @@ public class GamePanel extends JPanel implements ActionListener{
     }
 
     public void shouldScroll(int x, int y) { // Checks if it *should* scroll and makes this a flag
-        if (x < fastScrollWindow || x > getWidth() - fastScrollWindow || y < hudHeight + fastScrollWindow || y > getHeight() - fastScrollWindow) {
+        if (x < fastScrollWindow || x > getWidth() - fastScrollWindow || y < hudHeight + fastScrollWindow || y > getHeight() - fastScrollWindow - hudHeight) {
             // If it should be scrolling...
             isMouseScrolling = true;
         }
@@ -680,6 +706,12 @@ public class GamePanel extends JPanel implements ActionListener{
     }
 
     public void scrollWindow(int x, int y) {
+
+        if (y > getHeight() - hudHeight) { // If the mouse is in the lower HUD
+            // Don't scroll!
+            return;
+        }
+
         if (x < fastScrollWindow) {
             incOX(fastScrollSpeed);
         }
@@ -690,7 +722,7 @@ public class GamePanel extends JPanel implements ActionListener{
         if (y < hudHeight + fastScrollWindow) {
             incOY(fastScrollSpeed);
         }
-        else if (y > getHeight() - fastScrollWindow) {
+        else if (y > getHeight() - fastScrollWindow - hudHeight) { 
             incOY(-fastScrollSpeed);
         }
     }
@@ -726,8 +758,7 @@ public class GamePanel extends JPanel implements ActionListener{
     }
 
     // Get button name from getSource()
-    public String getName(ActionEvent e) {
-        Object object = e.getSource();
+    public String getName(Object object) {
         String fullName = object.toString();
         String[] stringEnd = fullName.split("\\[");
         String[] stringMid = stringEnd[1].split(",",2);
@@ -738,8 +769,9 @@ public class GamePanel extends JPanel implements ActionListener{
     // What to do on button press
     @Override
     public void actionPerformed(ActionEvent e) {
-        System.out.println(getName(e));
-        switch (getName(e)) {
+        System.out.println(getName(e.getSource()));
+
+        switch (getName(e.getSource())) {
             case "Next Level Button":
                 System.out.println("Next level!");
                 paused = false;
@@ -754,7 +786,10 @@ public class GamePanel extends JPanel implements ActionListener{
                 paused = false;
                 menuType = 0;
             break;
-        
+
+            case "Terrain Picker":
+                cycleTerrain();
+                System.out.println("Tile type chosen: " + tileList.get(editTerrain));
             default:
             break;
         }

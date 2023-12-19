@@ -3,11 +3,28 @@
     "rows": 75,
     "cols": 104,
     "mainHexQR": [8,2],
+    "mapTerrain": {
+        "Rock": [
+            [20,20]
+        ],
+        "Gold": [
+            [40,5]
+        ]
+    },
+    "mapPlaceables": {
+        "New Plant": [
+            [30,3]
+        ],
+        "Old Plant": []
+    },
     "mapFeatures": {
         "New Plant": [
             [30,3]
         ],
         "Old Plant": [],
-        "Stone": []
+        "Stone": [],
+        "Gold": [
+            [40,5]
+        ]
     }
 }

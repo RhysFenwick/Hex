@@ -23,8 +23,10 @@ public class Hex {
     
     // Default tile properties
     public Color color = Color.WHITE;
-    public String hexType = "Default";
+    public String terrain = "Default";
+    public String placeable = "Null";
     public boolean beenUpdated = false;
+
 
     public Hex(int startQ, int startR, int startS) { 
         // q is E, r is SW, s is NW
@@ -100,7 +102,7 @@ public class Hex {
     }
 
     public void toType(String hType) {
-        hexType = hType;
+        terrain = hType;
     }
 
     // Get QR of fractional hex (for Pix2Hex)

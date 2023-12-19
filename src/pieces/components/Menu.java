@@ -13,8 +13,9 @@ import main.GamePanel;
 
 public class Menu extends JPanel {
     
-    private static ArrayList<GButton> buttonList = new ArrayList<>();
-    private static int menuMargin = 10; // Margin aaround edge of menu for buttons
+    protected ArrayList<GButton> buttonList = new ArrayList<>();
+    protected int sideMargin = 40; // Margin around left/right edge of menu for buttons
+    protected int topMargin = 2;
 
     public Menu(int x, int y, int w, int h) {
         setLayout(new BorderLayout());
@@ -42,8 +43,8 @@ public class Menu extends JPanel {
         int buttonGap = 10; // Gap between buttons
         int bHeight = 40;
         int bWidth = 40;
-        int btnLeftX = menuMargin;
-        int btnRightX = width - bWidth - menuMargin;
+        int btnLeftX = sideMargin;
+        int btnRightX = width - bWidth - sideMargin;
 
         // Place buttons based on alignment value
         for (GButton btn : buttonList) {
@@ -51,10 +52,10 @@ public class Menu extends JPanel {
             int bAl = btn.align;
 
             if (bAl > 0) { // Set height as top or bottom (0 = bottom)
-                bY = menuMargin;
+                bY = topMargin + 2;
             }
             else {
-                bY = height - (bHeight + menuMargin);
+                bY = height - (bHeight + topMargin) - 2;
             }
 
             if (bAl*bAl == 1) { // If abs(bAl) = 1 (left-aligned)
@@ -63,34 +64,48 @@ public class Menu extends JPanel {
             }
             else if (bAl*bAl == 4) { // If abs(bAl) = 2 (right-aligned)
                 bX = btnRightX;
-                btnRightX -= bWidth + buttonGap;
+                btnRightX -= (bWidth + buttonGap);
             }
             else { // Centres button. Can only be one button at a time!
                 bX = (width - bWidth)/2;
             }
 
             btn.setLocation(bX,bY); 
-            btn.setSize(bWidth, bHeight);
+            btn.setSize(bWidth, bHeight - 15);
         }
     }
 
+
     // Specific menus
 
+    // main Menu (shown on pause)
     public static Menu mainMenu(GamePanel gamePanel) {
         int x=50,y=20,w=100,h=100;
         Menu mainMenu = new Menu(x, y, w, h);
 
 
         GButton nextLevel = new GButton("Next Level Button", "New<br>Level", Color.BLACK, -1, gamePanel);
-        buttonList.add(nextLevel);
+        mainMenu.buttonList.add(nextLevel);
         mainMenu.add(nextLevel);
 
-        
-        GButton secondButton = new GButton("God Mode", "Edit",Color.BLUE, -2, gamePanel);
-        buttonList.add(secondButton);
-        mainMenu.add(secondButton);
-        
-
         return mainMenu;
+    }
+
+    // HUD (lower) - shown all the time
+    public static Menu lowerHUD(GamePanel gamePanel) {
+        Menu lowerHUD = new Menu(0,0,0,0); // Does this matter?
+
+        lowerHUD.setLayout(null);
+
+        GButton editButton = new GButton("God Mode", "Edit",Color.BLUE, 2, gamePanel);
+        lowerHUD.buttonList.add(editButton);
+        lowerHUD.add(editButton);
+
+
+        GButton terrainPicker = new GButton("Terrain Picker", "Pick", Color.GREEN, 2, gamePanel);
+        lowerHUD.buttonList.add(terrainPicker);
+        lowerHUD.add(terrainPicker);
+
+        return lowerHUD;
     }
 }

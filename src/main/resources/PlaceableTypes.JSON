@@ -1,0 +1,32 @@
+{
+    "Null":{
+        "placeNum":0,
+        "destructible":false,
+        "radius":1
+    },
+    "Main":{
+        "placeNum":1,
+        "destructible":false,
+        "radius":1
+    },
+    "New Plant":{
+        "placeNum":2,
+        "destructible":true,
+        "radius":1
+    },
+    "Old Plant":{
+        "placeNum":3,
+        "destructible":true,
+        "radius":1
+    },
+    "Wall":{
+        "placeNum":4,
+        "destructible":true,
+        "radius":1
+    },
+    "Bomb":{
+        "placeNum":5,
+        "destructible":true,
+        "radius":1
+    }
+}

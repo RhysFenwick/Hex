@@ -10,12 +10,6 @@ import org.json.JSONTokener;
 
 
 public class Funcs { // All the maths that I don't want clogging up the other files
-    
-    //Unsure if this needs filling out
-    public static void main(String[] args) {
-
-        
-    }
 
 
     public static int[][] neighbourRing(int q, int r, int dist, int hexRows, int hexCols) { // Relies on the fact that distance = half the sum of QRS absolutes

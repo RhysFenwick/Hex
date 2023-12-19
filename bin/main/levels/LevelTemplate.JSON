@@ -3,13 +3,15 @@
     "rows": 0,
     "cols": 0,
     "mainHexQR": [0,0],
-    "mapFeatures": {
+    "mapTerrain": {
+        "Rock": [
+            [4,4],[5,5]
+        ]
+    },
+    "mapPlaceables": {
         "New Plant": [
             [1,1],[2,2],[3,3]
         ],
-        "Old Plant": [],
-        "Stone": [
-            [4,4],[5,5]
-        ]
+        "Old Plant": []
     }
 }

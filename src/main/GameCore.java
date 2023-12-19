@@ -1,5 +1,11 @@
 package main;
 
+/*
+ * Currently mostly just a holder for FPS/TPS counters
+ * TODO: Move core game functions here! 
+ * Final model goal: World logic happens here, GamePanel just for display
+ */
+
 public class GameCore{
 
     private GamePanel gamePanel;
@@ -49,7 +55,7 @@ public class GameCore{
             // FPS Counter
             if (System.currentTimeMillis() - lastCheck > 1000) {
                 lastCheck = System.currentTimeMillis();
-                //System.out.println("FPS: " + gamePanel.frameCount);
+                System.out.println("FPS: " + gamePanel.frameCount);
                 gamePanel.frameCount = 0;
             }
         }

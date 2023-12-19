@@ -22,5 +22,9 @@
     "Bomb":{
         "typeNum":5,
         "growAbility":0
+    },
+    "Gold":{
+        "typeNum":6,
+        "growAbility":0
     }
 }

@@ -45,10 +45,8 @@ public class MouseInputs implements MouseMotionListener, MouseWheelListener, Mou
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        //int x = e.getX(), y = e.getY();
-        //gamePanel.dragOver(x, y);
-        // gamePanel.moveToHex(x, y);
-        // gamePanel.moveTargetXY(x,y);
+        int x = e.getX(), y = e.getY();
+        gamePanel.dragOver(x, y);
     }
 
     @Override
