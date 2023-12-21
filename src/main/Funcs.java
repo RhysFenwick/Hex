@@ -57,6 +57,7 @@ public class Funcs { // All the maths that I don't want clogging up the other fi
     }
 
 
+    // TODO: Make this add .JSON if not already there
     public static JSONObject readJSON(String fileName){
         JSONObject json = null;
         try {

@@ -28,6 +28,7 @@ public class Hex {
     
     // Default tile properties
     public boolean beenUpdated = false;
+    public String type = "Default"; // "type" used for name of tile for both Unit and BoardHex at this stage!
 
 
     public Hex(int startQ, int startR, int startS) { 
@@ -60,6 +61,11 @@ public class Hex {
 
     public void moveToHex(int moveQ, int moveR) {
         shiftQR(moveQ - q, moveR-r);
+    }
+
+    // Overload
+    public void moveToHex(int[] moveQR) {
+        moveToHex(moveQR[0], moveQR[1]);
     }
 
     public static int[][] hex2Pix(int aimQ, int aimR) {

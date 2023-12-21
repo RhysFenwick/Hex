@@ -3,17 +3,18 @@ package inputs;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-import main.GamePanel;
+import main.LevelPanel;
+import main.levels.Level;
 
 public class KeyboardInputs implements KeyListener {
 
-    private GamePanel gamePanel;
+    private LevelPanel lvl;
 
     private int scrollSpeed = 17;
 
 
-    public KeyboardInputs(GamePanel gamePanel) {
-        this.gamePanel = gamePanel;
+    public KeyboardInputs(LevelPanel levelPanel) {
+        this.lvl = levelPanel;
     }
 
     
@@ -23,64 +24,64 @@ public class KeyboardInputs implements KeyListener {
         switch (e.getKeyCode()) {
 
             case KeyEvent.VK_A:
-                gamePanel.moveMainQR(-1, 1);
+                lvl.lvl.moveMainQR(-1, 1);
             break;  
 
             case KeyEvent.VK_D:
-                gamePanel.moveMainQR(1,0);
+                lvl.lvl.moveMainQR(1,0);
             break; 
 
             case KeyEvent.VK_Q:
-                gamePanel.moveMainQR(-1,0);
+                lvl.lvl.moveMainQR(-1,0);
             break;
 
             case KeyEvent.VK_E:
-                gamePanel.moveMainQR(1,-1);
+                lvl.lvl.moveMainQR(1,-1);
             break;
 
             case KeyEvent.VK_W:
-                gamePanel.moveMainQR(0,-1);
+                lvl.lvl.moveMainQR(0,-1);
             break;
 
             case KeyEvent.VK_S:
-                gamePanel.moveMainQR(0,1);
+                lvl.lvl.moveMainQR(0,1);
             break;
 
             case KeyEvent.VK_B:
                 //gamePanel.clearDrag();
-                gamePanel.bomb();
+                lvl.lvl.bomb();
             break;
 
             case KeyEvent.VK_M:
-                gamePanel.toggleMenu();
+                lvl.lvl.toggleMenu();
             break;
 
             case KeyEvent.VK_SPACE:
-                gamePanel.gameLoop("Move");
+                lvl.lvl.gameLoop("Move");
             break;
 
             case KeyEvent.VK_UP:
-                gamePanel.incOY(scrollSpeed);
+                lvl.incOY(scrollSpeed);
             break;
 
             case KeyEvent.VK_DOWN:
-                gamePanel.incOY(-scrollSpeed);
+                lvl.incOY(-scrollSpeed);
             break;
 
             case KeyEvent.VK_LEFT:
-                gamePanel.incOX(scrollSpeed);
+                lvl.incOX(scrollSpeed);
             break;
 
             case KeyEvent.VK_RIGHT:
-                gamePanel.incOX(-scrollSpeed);
+                lvl.incOX(-scrollSpeed);
             break;
 
             case KeyEvent.VK_P:
-                gamePanel.togglePause();
+                lvl.lvl.togglePause();
             break;
 
             case KeyEvent.VK_N:
-                gamePanel.loadLevel("Level002");
+                lvl.lvl.gc.loadLevel("Level002");
 
             default:
             break;

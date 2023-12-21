@@ -2,20 +2,21 @@ package main;
 
 import javax.swing.JFrame;
 
+import main.levels.Level;
+
 public class GameWindow extends JFrame{
+
+    int WIDTH = 500;
+    int HEIGHT = 500;
+    JFrame jf = new JFrame();
     
-    public GameWindow(GamePanel gamePanel) {
+    public GameWindow(Level lvl) {
 
-        int WIDTH = 500;
-        int HEIGHT = 500;
-
-        JFrame f = new JFrame();
-        // f.setIgnoreRepaint(true);
-        f.setSize(WIDTH, HEIGHT);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(gamePanel);
-        f.setLocationRelativeTo(null);
-        f.setVisible(true);
-
+        // jf.setIgnoreRepaint(true);
+        jf.setSize(WIDTH, HEIGHT);
+        jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        jf.setLocationRelativeTo(null);
+        jf.add(lvl.lPanel);
+        jf.setVisible(true);
     }
 }

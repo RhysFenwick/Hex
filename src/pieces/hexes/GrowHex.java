@@ -7,7 +7,7 @@ import java.util.Random;
  * TODO: Rename this "New Plant", extends Placeable
  */
 
-public class GrowHex extends Placeable{
+public class GrowHex extends Unit{
 
     private static int growChance = 100_000; // Chance out of a million that a tile will grow this tick
 

@@ -6,14 +6,14 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 
-import main.GamePanel;
+import main.LevelPanel;
 
 public class MouseInputs implements MouseMotionListener, MouseWheelListener, MouseListener{
 
-    private GamePanel gamePanel;
+    private LevelPanel lvl;
 
-    public MouseInputs(GamePanel gamePanel) {
-        this.gamePanel = gamePanel;
+    public MouseInputs(LevelPanel levelPanel) {
+        lvl = levelPanel;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class MouseInputs implements MouseMotionListener, MouseWheelListener, Mou
     public void mousePressed(MouseEvent e) {
         // TODO Auto-generated method stub
         int x = e.getX(), y = e.getY();
-        gamePanel.mouseClicked(x, y);
+        lvl.lvl.mouseClicked(x, y);
     }
 
     @Override
@@ -46,13 +46,13 @@ public class MouseInputs implements MouseMotionListener, MouseWheelListener, Mou
     @Override
     public void mouseDragged(MouseEvent e) {
         int x = e.getX(), y = e.getY();
-        gamePanel.dragOver(x, y);
+        lvl.lvl.dragOver(x, y);
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
         // TODO Auto-generated method stub
-        gamePanel.shouldScroll(e.getX(),e.getY());
+        lvl.shouldScroll(e.getX(),e.getY());
     }
 
     @Override

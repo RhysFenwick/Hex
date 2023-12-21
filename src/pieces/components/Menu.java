@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 import javax.swing.JPanel;
 
-import main.GamePanel;
+import main.levels.Level;
 
 public class Menu extends JPanel {
     
@@ -79,12 +79,12 @@ public class Menu extends JPanel {
     // Specific menus
 
     // main Menu (shown on pause)
-    public static Menu mainMenu(GamePanel gamePanel) {
+    public static Menu mainMenu(Level level) {
         int x=50,y=20,w=100,h=100;
         Menu mainMenu = new Menu(x, y, w, h);
 
 
-        GButton nextLevel = new GButton("Next Level Button", "New<br>Level", Color.BLACK, -1, gamePanel);
+        GButton nextLevel = new GButton("Next Level Button", "New<br>Level", Color.BLACK, -1, level);
         mainMenu.buttonList.add(nextLevel);
         mainMenu.add(nextLevel);
 

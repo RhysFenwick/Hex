@@ -8,7 +8,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 
-import main.GamePanel;
+import main.levels.Level;
 
 public class GButton extends JButton{
 
@@ -18,7 +18,7 @@ public class GButton extends JButton{
     public String label;
     public int align;
     
-    public GButton(String name, String txt, Color c, int alignment, GamePanel gamePanel) {
+    public GButton(String name, String txt, Color c, int alignment, Level level) {
 
         /*
          * Name: Unique identifier for the button across the entire program. Possibly need some namespace rules?
@@ -34,7 +34,7 @@ public class GButton extends JButton{
         setBackground(c);
         setBorderPainted(false);
         addActionListener(new CustomActionListener());
-        addActionListener(gamePanel);
+        addActionListener(level.lPanel);
         setMargin(new Insets(0, 0, 0, 0));
         setFont(new Font("Arial", Font.PLAIN, 16));
         setText("<html><div text-align:center>" + txt + "</div></html>");

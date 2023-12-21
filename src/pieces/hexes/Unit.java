@@ -7,12 +7,12 @@ package pieces.hexes;
  * 
  */
 
-public class Placeable extends Hex{
+public class Unit extends Hex{
 
     protected boolean destructible = true; // Can it be destroyed?
-    public String name = "Null"; // To be overridden!
+    public String type = "Null"; // To be overridden!
 
-    public Placeable(int startQ, int startR, int startS) {
+    public Unit(int startQ, int startR, int startS) {
         super(startQ, startR, startS);
     }
 

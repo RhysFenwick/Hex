@@ -4,7 +4,7 @@
     "cols": 104,
     "mainHexQR": [8,2],
     "mapTerrain": {
-        "Rock": [
+        "Stone": [
             [20,20]
         ],
         "Gold": [
@@ -16,15 +16,5 @@
             [30,3]
         ],
         "Old Plant": []
-    },
-    "mapFeatures": {
-        "New Plant": [
-            [30,3]
-        ],
-        "Old Plant": [],
-        "Stone": [],
-        "Gold": [
-            [40,5]
-        ]
     }
 }

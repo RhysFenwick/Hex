@@ -34,7 +34,7 @@ import pieces.components.HUD;
 import pieces.components.Menu;
 import pieces.hexes.GrowHex;
 import pieces.hexes.Hex;
-import pieces.hexes.Placeable;
+import pieces.hexes.Unit;
 import pieces.hexes.BoardHex;
 
 public class GamePanel extends JPanel implements ActionListener{
@@ -44,7 +44,7 @@ public class GamePanel extends JPanel implements ActionListener{
 
     // Initialise game board and pieces
     private Level lvl;
-    private Placeable mainHex;
+    private Unit mainHex;
     private Hex targetHex;
 
 
@@ -86,8 +86,9 @@ public class GamePanel extends JPanel implements ActionListener{
     // ArrayList for ordered list of terrain types
     public ArrayList<String> tileList = new ArrayList<>();
 
-    // Initialise JSON Object for terrain
+    // Initialise JSON Objects for terrain and units
     private JSONObject terrainJSON;
+    private JSONObject unitJSON;
 
     // Initialise random generator
     Random rand = new Random();
@@ -115,6 +116,7 @@ public class GamePanel extends JPanel implements ActionListener{
         // Read in JSONs of terrain/placeables
         // TODO: Should there be one JSON for terrain and placeables?
         terrainJSON = Funcs.readJSON("src/main/resources/TerrainTypes.JSON");
+        unitJSON = Funcs.readJSON("src/main/resources/PlaceableTypes.JSON");
 
         // Load in tile properties and fill hexTiles with images
         // TODO: Decide if I want two separate Maps for images, or have them all in one
@@ -145,12 +147,9 @@ public class GamePanel extends JPanel implements ActionListener{
 
     public void loadLevel(String lvlName) {
         String lvlString = "src\\main\\levels\\" + lvlName + ".JSON";
-         try {
-            lvl = new Level(lvlString);
-            startLevel(lvl);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        lvl = new Level(lvlString, new GameCore());
+        startLevel(lvl);
+
         updateOverlay = true;
         updateMidGrid = true;
     }
@@ -215,7 +214,7 @@ public class GamePanel extends JPanel implements ActionListener{
 
     // Update hex
     private void updateTerrain(int[] qr, String type) { // TODO - can this take in int[] OR hex?
-        BoardHex hex = hexGrid.get(indexFromQR(qr[0], qr[1]));
+        BoardHex hex = hexGrid.get(indexFromQR(qr));
         hex.toTerrain(type);
         hex.beenUpdated = true;   
         updateList.add(qr);     
@@ -274,7 +273,7 @@ public class GamePanel extends JPanel implements ActionListener{
         
         // Make a stone trail
         BoardHex toStone = hexFromQR(mainHex.q, mainHex.r);
-        if (toStone.terrain != "Bomb") {
+        if (toStone.type != "Bomb") {
             updateTerrain(toStone.getQR(),"Stone");
         }
 
@@ -284,12 +283,13 @@ public class GamePanel extends JPanel implements ActionListener{
             BoardHex h = hexGrid.get(i);
             
             // The main "If X do Y bit"
-            switch (h.terrain) { 
+            
+            switch (h.type) { 
                 case "New Plant":
                     int hq = h.q, hr = h.r;
                     int [] newPlantQR = GrowHex.grow(hq, hr);
                     if (Funcs.isHexInGrid(newPlantQR[0],newPlantQR[1], hexRows, hexCols)) { // Make sure it's not accessing a QR not in hexGrid!
-                        String hs = hexFromQR(newPlantQR[0],newPlantQR[1]).terrain;
+                        String hs = hexFromQR(newPlantQR).type;
                         long hGrow = terrainJSON.getJSONObject(hs).getLong("growAbility");
                         if (hGrow*10 >= 1 + rand.nextInt(10) ) {
                             newGrowth.add(newPlantQR);
@@ -301,7 +301,7 @@ public class GamePanel extends JPanel implements ActionListener{
                     int[][] allValidNeighbours = Funcs.neighbourRing(hq,hr,1, hexRows, hexCols); // Returns array of all in-bounds neighbours
                     boolean isSurrounded = true; // Until proven otherwise
                     for (int n=0;n<allValidNeighbours.length;n++) {
-                        String ht = hexFromQR(allValidNeighbours[n][0], allValidNeighbours[n][1]).terrain;
+                        String ht = hexFromQR(allValidNeighbours[n]).type;
                         if (terrainJSON.getJSONObject(ht).getLong("growAbility") != 0) { // If there are tiles around it it can grow into
                             isSurrounded = false;
                         }
@@ -314,7 +314,7 @@ public class GamePanel extends JPanel implements ActionListener{
                     // Transfer newGrowth tiles to being plants
                     for (int p=0;p<newGrowth.size();p++) {
                         int [] qr = newGrowth.get(p);
-                        Hex np = hexFromQR(qr[0], qr[1]);
+                        Hex np = hexFromQR(qr);
                         updateTerrain(np.getQR(),"New Plant");
                     }
             
@@ -335,7 +335,7 @@ public class GamePanel extends JPanel implements ActionListener{
         for (int i=0;i<hexGridSize;i++) { // Second pass - overlaid on top of tile growth. Too slow?
             BoardHex h = hexGrid.get(i); 
 
-            switch(h.terrain) { 
+            switch(h.type) { 
                 case "Bomb":
                     int bq = h.q, br = h.r;
                     int[][] innerRing = Funcs.neighbourRing(bq, br, 1, hexRows, hexCols);
@@ -344,17 +344,15 @@ public class GamePanel extends JPanel implements ActionListener{
                     updateTerrain(h.getQR(),"Default");
 
                     for (int inner=0;inner<innerRing.length;inner++) {
-                        int nq = innerRing[inner][0], nr = innerRing[inner][1];
-                        updateTerrain(new int[]{nq,nr},"Default");
+                        updateTerrain(innerRing[inner],"Default");
                     }
 
                     for (int outer=0;outer<outerRing.length;outer++) {
-                        int nq = outerRing[outer][0], nr = outerRing[outer][1];
-                        if (hexFromQR(nq, nr).terrain == "Old Plant") {
-                            updateTerrain(new int[]{nq,nr},"New Plant");
+                        if (hexFromQR(outerRing[outer]).type == "Old Plant") {
+                            updateTerrain(outerRing[outer],"New Plant");
                         }
                         else {
-                            updateTerrain(new int[]{nq,nr},"Default");
+                            updateTerrain(outerRing[outer],"Default");
                         }
                     }
 
@@ -368,7 +366,7 @@ public class GamePanel extends JPanel implements ActionListener{
         // Count totals
         plantCount = 0;
         for (int i=0;i<hexGridSize;i++) {
-            if (hexGrid.get(i).terrain == "New Plant" || hexGrid.get(i).terrain == "Old Plant") {
+            if (hexGrid.get(i).type.equals("New Plant") || hexGrid.get(i).type.equals("Old Plant")) {
                 plantCount += 1;
             }
         }
@@ -457,7 +455,7 @@ public class GamePanel extends JPanel implements ActionListener{
             for (BoardHex hex : hexGrid) {
                 int[] topLeft = hex.topLeft;
                 if (true) { // I.e. if the terrain is exposed TODO: Implement this!
-                    mg.drawImage(terrainImg.get(hex.terrain), topLeft[0] + hexWidth, topLeft[1] + hexHeight,null);
+                    mg.drawImage(terrainImg.get(hex.type), topLeft[0] + hexWidth, topLeft[1] + hexHeight,null);
                     hex.beenUpdated = false;
                 }
                 else {
@@ -484,7 +482,7 @@ public class GamePanel extends JPanel implements ActionListener{
         for (BoardHex hex : hexGrid) { 
             if (hex.beenUpdated) {
                 int[] topLeft = hex.topLeft;
-                g.drawImage(terrainImg.get(hex.terrain), topLeft[0] + offsetX, topLeft[1] + offsetY,null);
+                g.drawImage(terrainImg.get(hex.type), topLeft[0] + offsetX, topLeft[1] + offsetY,null);
                 midCounter++;
             }
         }
@@ -598,7 +596,7 @@ public class GamePanel extends JPanel implements ActionListener{
     public void moveToHex(int x, int y) {  // Moves main hex to x,y  
         if (Funcs.isHexInGrid(mainHex.q, mainHex.r, hexRows, hexCols)) {
             int[] qr = Hex.pix2Hex(x, y);
-            mainHex.moveToHex(qr[0], qr[1]);
+            mainHex.moveToHex(qr);
         }
     }
 
@@ -667,8 +665,8 @@ public class GamePanel extends JPanel implements ActionListener{
         if (godMode) {
             String hexTerrain = tileList.get(editTerrain);
             int[] qr = Hex.pix2Hex(x - offsetX, y - offsetY);
-            BoardHex h = hexFromQR(qr[0], qr[1]);
-            if (h.terrain != hexTerrain) { // Only need to change/repaint if it's a new hex!
+            BoardHex h = hexFromQR(qr);
+            if (h.type != hexTerrain) { // Only need to change/repaint if it's a new hex!
                 updateTerrain(qr, hexTerrain);
             }
         }    
@@ -762,8 +760,20 @@ public class GamePanel extends JPanel implements ActionListener{
         return hexGrid.get(i);
     }
 
+    // Overload
+    public BoardHex hexFromQR(int[] qr) {
+        int i = indexFromQR(qr);
+        return hexGrid.get(i);
+    }
+
     public int indexFromQR(int q, int r) {
         int i = q * hexRows + r + q/2;
+        return i;
+    }
+
+    // Overload
+    public int indexFromQR(int[] qr) {
+        int i = indexFromQR(qr[0], qr[1]);
         return i;
     }
 
@@ -782,6 +792,12 @@ public class GamePanel extends JPanel implements ActionListener{
         int x = hex.getX()[0];
         int y = hex.getY()[1];
         int[] xy = {x,y};
+        return xy;
+    }
+
+    // Overload
+    public int[] topCorner(int[] qr) { 
+        int[] xy = topCorner(qr[0], qr[1]);
         return xy;
     }
 
