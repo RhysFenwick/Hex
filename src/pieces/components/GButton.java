@@ -55,8 +55,6 @@ public class GButton extends JButton{
 
         @Override
         public void actionPerformed(ActionEvent e) {
-        // TODO Auto-generated method stub
-        //System.out.println("Pressed!");
         }
     }
 }

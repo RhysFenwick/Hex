@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 import inputs.KeyboardInputs;
 import inputs.MouseInputs;
 import main.levels.Level;
+import pieces.hexes.BoardHex;
 import pieces.hexes.Hex;
 import pieces.hexes.Unit;
 
@@ -34,9 +35,10 @@ public class LevelPanel extends JPanel implements ActionListener{
     // Graphics values
     public int hudHeight = 30;
     public int offsetX = 20;
-
     public int offsetY = hudHeight + 20;
     private int hexHeight, hexWidth;
+    public int menuMargin = 50; 
+
 
     // Scrolling 
     private boolean isMouseScrolling = false;
@@ -62,7 +64,7 @@ public class LevelPanel extends JPanel implements ActionListener{
     // Whether to update midGrid
     private boolean updateMidGrid = true;
     private int updateMGthreshold = 500; // # of hexes that need updating before the MG updates
-    private Set<int[]> updateList = new HashSet<int[]>();
+    public Set<int[]> updateList = new HashSet<int[]>();
 
     public LevelPanel(Level level) {
 
@@ -188,6 +190,13 @@ public class LevelPanel extends JPanel implements ActionListener{
         return img;
     }
 
+    // Overload
+    public Image getImage(int[] qr) {
+        int i = lvl.indexFromQR(qr);
+        Image img = getImage(i);
+        return img;
+    }
+
     // Initialise buffered images
     
     BufferedImage overlayHexGrid;
@@ -200,6 +209,8 @@ public class LevelPanel extends JPanel implements ActionListener{
         // Initialise BI dimensions - doesn't work outside this for some reason!
         int bufferedWidth = (int) Math.round((1+lvl.cols) * hexWidth * 0.75);
         int bufferedHeight = (1+lvl.rows) * hexHeight;
+
+        g.setClip(0,0,getWidth(),getHeight()); // Only bothers repainting what's shown on screen
 
         // Setup
         Graphics2D g2 = (Graphics2D) g;
@@ -264,7 +275,7 @@ public class LevelPanel extends JPanel implements ActionListener{
             }
         }
 
-        g.setClip(0,0,getWidth(),getHeight()); // Only bothers repainting what's shown on screen
+        
 
         // Try scrolling
         // Note: this links scroll speed to FPS - lag will make movement relatively slower compared to update loop.
@@ -278,12 +289,10 @@ public class LevelPanel extends JPanel implements ActionListener{
         // Renders updates to midgrid
         // TODO: Integrate UpdateList
         int midCounter = 0;
-        for (int i=0;i<gridSize;i++) {
-            Unit hex = lvl.unitGrid.get(i);
-            if (hex.beenUpdated) {
-                g.drawImage(getImage(i), hex.topLeft[0] + offsetX, hex.topLeft[1] + offsetY,null);
-                midCounter++;
-            }
+        for (int[] qr : updateList) {
+            BoardHex hex = lvl.terrainFromQR(qr);
+            g.drawImage(getImage(qr), hex.topLeft[0] + offsetX, hex.topLeft[1] + offsetY,null);
+            midCounter++;
         }
             
 
@@ -356,27 +365,36 @@ public class LevelPanel extends JPanel implements ActionListener{
 
 
         
-        /* TODO: Fix this
+        // TODO: Fix this
         // Show main menu
         if (lvl.menuType != 0) {
             lvl.mainMenu.setLocation(menuMargin, menuMargin);
             int menuWidth = getWidth() - menuMargin*2, menuHeight = getHeight() - menuMargin*2;
-            mainMenu.setSize(menuWidth, menuHeight);
-            add(mainMenu);
+            lvl.mainMenu.setSize(menuWidth, menuHeight);
+            add(lvl.mainMenu);
         }
         else {
-            remove(mainMenu);
+            remove(lvl.mainMenu);
         }
-        */
+        
         
 
         // Final line - frame done!
         frameCount++;
     }
 
+    // Get button name from getSource()
+    public String getName(Object object) {
+        String fullName = object.toString();
+        String[] stringEnd = fullName.split("\\[");
+        String[] stringMid = stringEnd[1].split(",",2);
+        String stringName = stringMid[0];
+        return stringName;
+    }
+
+    // What to do on button press
     @Override
     public void actionPerformed(ActionEvent e) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'actionPerformed'");
+        lvl.onAction(getName(e.getSource()));
     }
 }

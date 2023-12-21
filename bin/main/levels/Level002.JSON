@@ -3,14 +3,6 @@
     "rows": 100,
     "cols": 100,
     "mainHexQR": [50,2],
-    "mapFeatures": {
-        "New Plant": [
-            [40,2],[40,3],[40,4]
-        ],
-        "Old Plant": [],
-        "Stone": []
-    },
-
     "mapTerrain": {
         "Rock": [
             [4,4],[5,5]

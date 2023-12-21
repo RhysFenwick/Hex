@@ -3,6 +3,7 @@ package main;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -25,7 +26,7 @@ public class Funcs { // All the maths that I don't want clogging up the other fi
                 r += vecsFromTop[i][1];
             }
         }
-        int[][] ringList = GamePanel.list2nestInt(dMatches);
+        int[][] ringList = list2nestInt(dMatches);
         int[][] validRing = filterForValid(ringList, hexRows, hexCols);
         return validRing;
     }
@@ -69,5 +70,24 @@ public class Funcs { // All the maths that I don't want clogging up the other fi
             System.out.println(fileName + " not found");
         }
         return json;
+    }
+
+    public static ArrayList<String> keyListFromJSON(JSONObject j) {
+        ArrayList<String> keyList = new ArrayList<>();
+        Iterator<String> keys = j.keys();
+        while(keys.hasNext()) {
+            String key = keys.next();
+            keyList.add(key);
+        }
+        return keyList;
+    }
+
+    public static int[][] list2nestInt(List<int[]> qrList) {
+        int[][] outInt = new int[qrList.size()][2];
+        for (int i=0;i<qrList.size();i++) {
+            outInt[i][0] = qrList.get(i)[0];
+            outInt[i][1] = qrList.get(i)[1];
+        }
+        return outInt;
     }
 }

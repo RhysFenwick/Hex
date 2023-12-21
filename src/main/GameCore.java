@@ -9,131 +9,115 @@ import java.util.Iterator;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.SwingWorker;
 
 import org.json.JSONObject;
 
 import main.levels.Level;
 import pieces.hexes.Hex;
 
-/*
- * Currently mostly just a holder for FPS/TPS counters
- * TODO: Move core game functions here! 
- * Final model goal: World logic happens here, GamePanel just for display
- */
+public class GameCore {
 
-public class GameCore{
+    public static int FPS = 65;
+    public static int TPS = 10;
 
-
-    public static int FPS = 65; // Would like to make this not static! Used for GamePanel scrolling.
-    public static int TPS = 10; // Game ticks per second
-
-    // Initialise hex size
     int hexHeight = Hex.height;
-
     int hexWidth = Hex.width;
 
-    // Initialise Image Map
-    public Map<String, Image> hexImg = new HashMap<String,Image>();
-
-    // Initialise first level (logic and graphics)
+    public GameWindow gameWindow;
+    public Map<String, Image> hexImg = new HashMap<String, Image>();
     public Level lvl;
     public LevelPanel lPanel;
-
-    // ArrayList for ordered list of terrain types
     public ArrayList<String> tileList = new ArrayList<>();
+    private volatile boolean keepRunning = true;
 
     public GameCore() {
-
-        // Set up hexImg
-        // TODO: Combine these into one!
         fillImageMap(hexImg, "TerrainTypes");
         fillImageMap(hexImg, "PlaceableTypes");
-        
-        // Set up first level
+
         lvl = new Level("Level001", this);
         lPanel = lvl.lPanel;
 
-    
-        System.setProperty("sun.java2d.opengl", "true"); // Should speed up rendering!
-        lPanel.setDoubleBuffered(true); // Maybe speed up?
-        GameWindow gameWindow = new GameWindow(lvl);
-        gameWindow.getAlignmentX(); // Exists only to avoid the yellow squiggle
-        lPanel.requestFocus(); // Gets focus to pick up keypresses
-        run();
+        System.setProperty("sun.java2d.opengl", "true");
+        gameWindow = new GameWindow(lvl);
+        gameWindow.getAlignmentX();
+        lPanel.requestFocus();
+
+        runGameLoop(lPanel);
     }
 
-    // The main "tick" loop - constantly running!
+    private void runGameLoop(LevelPanel lp) {
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                double timePerFrame = 1_000_000_000.0 / FPS;
+                long lastFrame = System.nanoTime();
+                long lastCheck = System.currentTimeMillis();
+                double timePerTick = 1_000_000_000.0 / TPS;
+                long lastTick = System.nanoTime();
 
-    public void run() {
+                System.out.println("Starting run!");
+                lp.repaint();
 
-        // Set FPS loop variables
-        double timePerFrame = 1_000_000_000.0 / FPS;
-        long lastFrame = System.nanoTime();
-        
-        // Set FPS counter variables
-        long lastCheck = System.currentTimeMillis();
+                while (keepRunning) {
+                    long now = System.nanoTime();
 
-        // Set TPS counter
-        double timePerTick = 1_000_000_000.0 / TPS;
-        long lastTick = System.nanoTime();
+                    if (now - lastTick > timePerTick) {
+                        lp.lvl.gameLoop("Move");
+                        lastTick = now;
+                    }
 
-        // The core FPS/TPS loop
-        while (true) {
-            long now = System.nanoTime();
+                    if (now - lastFrame > timePerFrame) {
+                        lp.repaint();
+                        lastFrame = now;
+                    }
 
-            //TPS - TODO: Add catch-up capability if it misses a beat
-            if (now - lastTick > timePerTick) {
-                //gamePanel.gameLoop("Move");
-                lastTick = now;
+                    if (System.currentTimeMillis() - lastCheck > 1000) {
+                        lastCheck = System.currentTimeMillis();
+                        System.out.println("FPS: " + lp.frameCount);
+                        lp.frameCount = 0;
+                    }
+                }
+                return null;
             }
+        };
 
-            // FPS
-            if (now - lastFrame > timePerFrame) {
-                lPanel.repaint();
-                lastFrame = now; // Calls the Sys anew?
-            }
-
-            // FPS Counter
-            if (System.currentTimeMillis() - lastCheck > 1000) {
-                lastCheck = System.currentTimeMillis();
-                //System.out.println("FPS: " + gamePanel.frameCount);
-                //gamePanel.frameCount = 0;
-            }
-        }
+        worker.execute();
     }
 
-
-    // Function to initialise image map(s).
-    public void fillImageMap(Map<String,Image> map, String jsonName) {
-
-        JSONObject tileJSON = Funcs.readJSON("src/main/resources/" +  jsonName + ".JSON");
-
-        // Cycle through the JSONObject and read each entry 
-
+    public void fillImageMap(Map<String, Image> map, String jsonName) {
+        JSONObject tileJSON = Funcs.readJSON("src/main/resources/" + jsonName + ".JSON");
         Iterator<String> tileKeys = tileJSON.keys();
+        
         while (tileKeys.hasNext()) {
             String tString = tileKeys.next();
-            if (!tString.equals("Null")) { // The "Null" Placeable doesn't have an image
-                tileList.add(tString); // Filling the ArrayList
-                map.put(tString,getImageFromFile(tString));
-            }   
+            if (!tString.equals("Null")) {
+                tileList.add(tString);
+                map.put(tString, getImageFromFile(tString));
+            }
         }
     }
 
-    public Image getImageFromFile(String filename){
-        // Returns a tile-sized image
+    public Image getImageFromFile(String filename) {
         Image image = null;
         try {
             File imgFile = new File("src/main/resources/img/terrain/" + filename + ".png");
             image = ImageIO.read(imgFile);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             System.out.println(filename);
             System.out.println(e);
-        }  
+        }
         return image.getScaledInstance(hexWidth, hexHeight, Image.SCALE_DEFAULT);
     }
 
-    public void loadLevel(String string) {
+    public void loadLevel(String levelName) {
+        int newWidth = lPanel.getWidth(), newHeight = lPanel.getHeight();
+        keepRunning = false;
+        Level newLevel = new Level(levelName, this);
+        lPanel = newLevel.lPanel;
+        gameWindow.updateScreen(lPanel, newWidth, newHeight);
+        keepRunning = true;
+        runGameLoop(lPanel);
     }
 }
+

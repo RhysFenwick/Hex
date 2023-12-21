@@ -4,7 +4,7 @@
     "cols": 104,
     "mainHexQR": [8,2],
     "mapTerrain": {
-        "Stone": [
+        "Rock": [
             [20,20]
         ],
         "Gold": [

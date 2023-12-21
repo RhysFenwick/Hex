@@ -33,6 +33,8 @@ public class Level {
     public boolean paused = false;
     private boolean godMode = false;
     public int menuType = 0; // 0 = "No menu"
+    public int editTerrain = 0;
+    public String dropTile;
 
     // Gameplay values
     public int plantCount; // # of tiles that are old/new plant
@@ -45,6 +47,7 @@ public class Level {
     public Hex targetHex;
     public Map<String,Integer> tileCounters = new HashMap<>();
     private String[] plantNames = {"New Plant", "Old Plant"};
+    public List<String> unitList, terrainList; // Lists of all types
 
     // Initialise GameCore
     public GameCore gc;
@@ -53,8 +56,8 @@ public class Level {
     public LevelPanel lPanel;
 
     // Initialise menus
-    Menu mainMenu = Menu.mainMenu(this); // Can probably have a function in Menu.java that initialises all menus as Map<String,Menu>
-    public HUD lowerHUD = new HUD(0,0,0,0,this); // TODO - If all initialised at 0, can remove those parameters
+    public Menu mainMenu; // Can probably have a function in Menu.java that initialises all menus as Map<String,Menu>
+    public HUD lowerHUD; // TODO - If all initialised at 0, can remove those parameters
 
     // Initialise target hex
     public boolean targetSet = false;
@@ -80,6 +83,11 @@ public class Level {
         terrainJSON = Funcs.readJSON("src/main/resources/TerrainTypes.JSON");
         unitJSON = Funcs.readJSON("src/main/resources/PlaceableTypes.JSON");
 
+        // Fill ArrayLists of tile type names
+        terrainList = Funcs.keyListFromJSON(terrainJSON);
+        unitList = Funcs.keyListFromJSON(unitJSON);
+        unitList.remove("Null");
+
 
         // Read important variables from JSON
         cols = lvl.getInt("cols");
@@ -100,11 +108,14 @@ public class Level {
         plantCount = sumValues(tileCounters, plantNames);
         mainHex = new Unit(mainHexQR[0], mainHexQR[1],-mainHexQR[0]-mainHexQR[1]); 
         targetHex = new Hex(mainHexQR[0], mainHexQR[1],-mainHexQR[0]-mainHexQR[1]); // Initialise as on target
-        hexFromQR(mainHex.q, mainHex.r,"terrainGrid").type = "Wall"; // Only for stone trail!        
-        
-        // Set up LevelPanel
+        unitFromQR(mainHex.q, mainHex.r).type = "Wall"; // Only for stone trail!        
+
+        // Set up lPanel
         lPanel = new LevelPanel(this);
 
+        // Set up menus
+        mainMenu = Menu.mainMenu(this);
+        lowerHUD = new HUD(0,0,0,0,this);
     }
 
 
@@ -180,25 +191,7 @@ public class Level {
                     tileCounters.put(typeName,1);
                 }
             }
-        }
-
-        for (Map.Entry<String,int[][]> tileType : tileMap.entrySet()) {
-            String typeName =  tileType.getKey();
-            int[][] tileList = tileType.getValue();
-            for (int[] qr : tileList) {
-                Hex hex = hexFromQR(qr, gridName);
-
-                hex.type = typeName; // Common to BoardHex and Unit
-
-                if (tileCounters.containsKey(typeName)) {
-                    int c = tileCounters.get(typeName);
-                    tileCounters.put(typeName, c+1);
-                }
-                else { // If tileType isn't counted yet, initialise it with a value of 1
-                    tileCounters.put(typeName,1);
-                }
-            }
-        }   
+        } 
     }
 
     private int sumValues(Map<String,Integer> tileCounter, String[] checkStrings) {
@@ -237,27 +230,10 @@ public class Level {
 
 
     /*
-     * Get Hex/Unit/BoardHex from q,r pair and list name string
+     * Get Unit/BoardHex from q,r pair and list name string
      * TODO: Can I combine these?
      * TODO: Change away from stringName method
      */
-    private Hex hexFromQR(int q, int r, String gridName) { 
-        int i = q * rows + r + q/2;
-
-        if (gridName.equals("terrainGrid")) {
-            return terrainGrid.get(i);
-        }
-        else { // Assumption: !terrainGrid = unitGrid
-            return unitGrid.get(i);
-        }
-    }
-
-    // Overload
-    private Hex hexFromQR(int[] qr, String gridName) { 
-        int q = qr[0], r = qr[1];
-        Hex hex = hexFromQR(q, r, gridName);
-        return hex;
-    }
 
 
     private Unit unitFromQR(int q, int r) { 
@@ -266,7 +242,7 @@ public class Level {
     }
 
     // Overload
-    private Unit unitFromQR(int[] qr) { 
+    public Unit unitFromQR(int[] qr) { 
         int q = qr[0], r = qr[1];
         Unit hex = unitFromQR(q, r);
         return hex;
@@ -278,21 +254,40 @@ public class Level {
     }
 
     // Overload
-    private BoardHex terrainFromQR(int[] qr) { 
+    public BoardHex terrainFromQR(int[] qr) { 
         int q = qr[0], r = qr[1];
         BoardHex hex = terrainFromQR(q, r);
         return hex;
     }
 
+    // Get index
+    public int indexFromQR(int q, int r) {
+        int i = q * rows + r + q/2;
+        return i;
+    }
+
+    // Overload
+    public int indexFromQR(int[] qr) {
+        int i = indexFromQR(qr[0], qr[1]);
+        return i;
+    }
+
     /*
-     * Update unit type
-     * TODO: Make matching function for terrain
+     * Update unit/terrain type - overloaded!
      * TODO: Validate type name to stop terrain/unit switch
      * TODO: Overload
      */
-    private void updateUnit(Unit hex, String newType) {
+    private void updateHex(Unit hex, String newType) {
         hex.type = newType;
         hex.beenUpdated = true;
+        lPanel.updateList.add(hex.getQR());
+    }
+
+    private void updateHex(BoardHex hex, String newType) {
+        hex.type = newType;
+        hex.beenUpdated = true;
+        hex.grow = terrainJSON.getJSONObject(newType).getLong("growAbility");
+        lPanel.updateList.add(hex.getQR());
     }
     
 
@@ -308,7 +303,7 @@ public class Level {
         // Make a wall trail
         Unit toWall = unitFromQR(mainHex.q, mainHex.r);
         if (toWall.type != "Bomb") {
-            updateUnit(toWall,"Wall");
+            updateHex(toWall,"Wall");
         }
 
         List<int[]> newGrowth = new ArrayList<>(); // To hold all QRs that turn to plants this tick
@@ -346,7 +341,7 @@ public class Level {
                     }
 
                     else { // If there are no non-unit neighbours
-                        updateUnit(h, "Old Plant");
+                        updateHex(h, "Old Plant");
                     }
                     
                 break;
@@ -358,7 +353,7 @@ public class Level {
 
         // Grow new plants
         for (int[] qr : newGrowth) {
-            updateUnit(unitFromQR(qr), "New Plant");
+            updateHex(unitFromQR(qr), "New Plant");
         }
         newGrowth.clear();
 
@@ -374,18 +369,18 @@ public class Level {
                     int[][] innerRing = Funcs.neighbourRing(bq, br, 1, rows, cols);
                     int[][] outerRing = Funcs.neighbourRing(bq, br, 2, rows, cols);
 
-                    updateUnit(h,"Null");
+                    updateHex(h,"Null");
 
                     for (int inner=0;inner<innerRing.length;inner++) {
-                        updateUnit(unitFromQR(innerRing[inner]),"Null");
+                        updateHex(unitFromQR(innerRing[inner]),"Null");
                     }
 
                     for (int outer=0;outer<outerRing.length;outer++) {
                         if (unitFromQR(outerRing[outer]).type == "Old Plant") {
-                            updateUnit(unitFromQR(outerRing[outer]),"New Plant");
+                            updateHex(unitFromQR(outerRing[outer]),"New Plant");
                         }
                         else {
-                            updateUnit(unitFromQR(outerRing[outer]),"Null");
+                            updateHex(unitFromQR(outerRing[outer]),"Null");
                         }
                     }
 
@@ -405,7 +400,19 @@ public class Level {
         }
     }
 
-    public void dragOver(int x, int y) {
+    public void dragOver(int x, int y) { // TODO - Any hex!
+        if (validXY(x, y) && godMode) {
+            // dropTile is name of tile to be used
+            int[] qr = Hex.pix2Hex(x - lPanel.offsetX, y - lPanel.offsetY);
+            if (unitList.contains(dropTile)) { // If it's a unit
+                Unit hex = unitFromQR(qr);
+                updateHex(hex, dropTile);
+            }
+            else { // Assumption: if not in unitList, it's a terrain
+                BoardHex hex = terrainFromQR(qr);
+                updateHex(hex, dropTile);
+            }
+        }  
     }
 
 
@@ -415,13 +422,39 @@ public class Level {
 
     public void bomb() {
         if (!paused) {
-            updateUnit(unitFromQR(mainHex.getQR()),"Bomb");  
-            gameLoop("Bomb"); // Going via gameLoop means a redundant pause check
+            updateHex(unitFromQR(mainHex.getQR()),"Bomb");  
+            gameLoop("Bomb"); // Going via gameLoop means a redundant pause check (TODO: Do I need to call this?)
         } 
     }
 
+    public void levelWipe() {
+        for (Unit hex : unitGrid) {
+            updateHex(hex, "Null");
+        }
+    }
 
-    public void moveMainQR(int i, int j) {
+
+    // Move the main hex - called by WASD
+
+    public void moveMainQR(int qDelta, int rDelta) {  // Move the main hex by specified Q,R (likely to neighbour)
+        if (!paused) { // Putting this here to avoid duplication in KeyboardInputs
+            targetSet = false;
+        }
+        int newQ = mainHex.q + qDelta, newR = mainHex.r + rDelta;
+        moveMainToQR(newQ,newR);
+    }
+
+    public void moveMainXY(int x, int y) { // Move the main to a given x,y
+        int [] mainHex = Hex.pix2Hex(x-lPanel.offsetX, y-lPanel.offsetY);
+        moveMainToQR(mainHex[0], mainHex[1]);
+    }
+
+    public void moveMainToQR(int q, int r) {
+        if (!paused && Funcs.isHexInGrid(q, r, rows, cols)) {
+            mainHex.moveToHex(q,r); 
+            gameLoop("Move"); // Going via gameLoop means a redundant pause check
+        }
+        
     }
 
     // Controlling the game loop
@@ -467,6 +500,12 @@ public class Level {
         }
     }
 
+    // Check if x,y is on a hex
+    private boolean validXY(int x, int y) {
+        int [] targetQR = Hex.pix2Hex(x-lPanel.offsetX, y-lPanel.offsetY);
+        return Funcs.isHexInGrid(targetQR[0], targetQR[1], rows, cols);
+    }
+
     // Move the target
 
     public void moveTargetQR(int qDelta, int rDelta) {  // Move the target hex by specified Q,R (likely to neighbour)
@@ -484,7 +523,47 @@ public class Level {
     }
 
     public void moveTargetToQR(int q, int r) {
-        if (Funcs.isHexInGrid(q, r, rows, cols))
-        targetHex.moveToHex(q,r);
+        if (Funcs.isHexInGrid(q, r, rows, cols)) {
+            targetHex.moveToHex(q,r);
+        }  
+    }
+
+    // Menu: cycle through terrain types
+
+    public void cycleTerrain() {
+        editTerrain += 1;
+        editTerrain = editTerrain%(terrainList.size() + unitList.size()); // Should cycle through all the different tile types!
+        if (editTerrain>=terrainList.size()) {
+            dropTile = unitList.get(editTerrain - terrainList.size());
+        }
+        else {
+            dropTile = terrainList.get(editTerrain);
+        }
+    }
+
+    // What to do on button press
+    public void onAction(String action) {
+        switch (action) {
+            case "Next Level Button":
+                System.out.println("Next level!");
+                paused = false;
+                menuType = 0;
+                gc.loadLevel("Level002");
+            break;
+
+            case "God Mode":
+                System.out.println("Editing!");
+                levelWipe();
+                godMode = true;
+                paused = false;
+                menuType = 0;
+            break;
+
+            case "Terrain Picker":
+                cycleTerrain();
+                System.out.println("Tile type chosen: " + dropTile);
+            default:
+            break;
+        }
     }
 }
